@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+
+       http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://www.springframework.org/schema/aop
+       http://www.springframework.org/schema/aop/spring-aop.xsd
+       http://www.springframework.org/schema/context
+       http://www.springframwork.org/schema/springcontext.xsd
+       http://www.springframework.org/schema/tx
+       http://www.springframework.org/schema/tx/spring-tx.xsd
+       ">
+
+    <bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+        <property name="driverClassName" value="com.mysql.jdbc.Driver"/>
+        <property name="url" value="jdbc:mysql://localhost:3306/try"/>
+        <property name="username" value="root"/>
+        <property name="password" value="0000"/>
+    </bean>
+
+    <!--事物管理器-->
+    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+    <!--事物管理模板-->
+    <!--<bean id="transactionTemplate" class="org.springframework.transaction.support.TransactionTemplate">-->
+        <!--<property name="transactionManager" ref="transactionManager"/>-->
+    <!--</bean>-->
+    <bean id="jdbcTemplate" class="org.springframework.jdbc.core.simple.SimpleJdbcTemplate">
+        <constructor-arg ref="dataSource"/>
+    </bean>
+    <bean id="bankimpDao" class="com.you.dao.BankImpDao">
+        <property name="jdbcTemplate" ref="jdbcTemplate"/>
+    </bean>
+
+    <bean id="bankServlceimpl" class="com.you.service.BankServlceimpl">
+        <property name="bankDao" ref="bankimpDao"/>
+
+    </bean>
+    <bean class="com.you.email.EmialNotifier"/>
+    <!--配置事物通知-->
+    <tx:advice id="txAdrive" transaction-manager="transactionManager">
+        <tx:attributes>
+            <tx:method name="*"/>
+        </tx:attributes>
+    </tx:advice>
+    <!--配置通知-->
+    <aop:config>
+        <!--配置切点-->
+        <aop:pointcut id="serviceMethod" expression="execution(* com.you.service.*.*(..))"/>
+
+        <aop:advisor advice-ref="txAdrive" pointcut-ref="serviceMethod"/>
+    </aop:config>
+    <bean id="stoneAxe" class="com.you.axe.StoneAxe"/>
+    <bean id="chain" class="com.you.people.Chain">
+        <!--设值注入实质就是通过setter方法赖注入被依赖的对象，被依赖对象被当成依赖类中的一个成员变量-->
+        <!--<property name="axe" value="com.you.axe.StoneAxe"/>-->
+        <property name="axe" ref="stoneAxe"/>
+    </bean>
+    <bean id="american" class="com.you.people.American">
+        <!--构造注入，通过带参数的构造器进行注入，当执行带参数的构造器是就利用构造器对成员变量执行初始化-->
+        <constructor-arg ref="stoneAxe"/>
+    </bean>
+    <bean id="test" class="com.you.Test"/>
+    <bean id="section" class="com.you.aop.Section"/>
+    <!--将Section申明为一个切面-->
+    <aop:config>
+        <!--定义一个切面-->
+        <aop:aspect id="section" ref="section">
+            <!--需要添加aspects jar包-->
+            <!--定义切点-->
+            <aop:pointcut  id="busnessServes" expression="execution(* com.you.*.*(..))"/>
+            <aop:before  pointcut-ref="busnessServes" method="beforAdd"/>
+        </aop:aspect>
+    </aop:config>
+</beans>
